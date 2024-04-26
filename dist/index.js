@@ -49,7 +49,7 @@ class HatiSdk {
     }
     async set(key, value, storageType = StorageType.MEMORY, ttl = 0) {
         const payload = `SET ${storageType} ${ttl} ${key} ${value}`;
-        const res = await this.publish(this.prepareCommand(payload));
+        const res = await this.publish(payload);
         if (res === OK) {
             return true;
         }
@@ -57,7 +57,7 @@ class HatiSdk {
     }
     async get(key, storageType = StorageType.MEMORY) {
         const payload = `GET ${storageType} ${key}`;
-        const res = await this.publish(this.prepareCommand(payload));
+        const res = await this.publish(payload);
         if (res !== ERROR) {
             return res;
         }
@@ -65,7 +65,7 @@ class HatiSdk {
     }
     async has(key, storageType = StorageType.MEMORY) {
         const payload = `HAS ${storageType} ${key}`;
-        const res = await this.publish(this.prepareCommand(payload));
+        const res = await this.publish(payload);
         if (res === OK) {
             return true;
         }
@@ -73,7 +73,7 @@ class HatiSdk {
     }
     async delete(key, storageType = StorageType.MEMORY) {
         const payload = `DELETE ${storageType} ${key}`;
-        const res = await this.publish(this.prepareCommand(payload));
+        const res = await this.publish(payload);
         if (res === OK) {
             return true;
         }

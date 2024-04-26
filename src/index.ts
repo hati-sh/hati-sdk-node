@@ -64,7 +64,7 @@ class HatiSdk {
   ): Promise<boolean> {
     const payload = `SET ${storageType} ${ttl} ${key} ${value}`;
 
-    const res = await this.publish(this.prepareCommand(payload));
+    const res = await this.publish(payload);
     if (res === OK) {
       return true;
     }
@@ -78,7 +78,7 @@ class HatiSdk {
   ): Promise<string | null> {
     const payload = `GET ${storageType} ${key}`;
 
-    const res = await this.publish(this.prepareCommand(payload));
+    const res = await this.publish(payload);
     if (res !== ERROR) {
       return res;
     }
@@ -92,7 +92,7 @@ class HatiSdk {
   ): Promise<boolean> {
     const payload = `HAS ${storageType} ${key}`;
 
-    const res = await this.publish(this.prepareCommand(payload));
+    const res = await this.publish(payload);
     if (res === OK) {
       return true;
     }
@@ -106,7 +106,7 @@ class HatiSdk {
   ): Promise<boolean> {
     const payload = `DELETE ${storageType} ${key}`;
 
-    const res = await this.publish(this.prepareCommand(payload));
+    const res = await this.publish(payload);
     if (res === OK) {
       return true;
     }
