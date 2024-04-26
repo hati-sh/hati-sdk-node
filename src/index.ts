@@ -1,141 +1,117 @@
 import { Socket, createConnection, connect } from "net";
 
-const version = "01";
-const hatiHeader = "++hati";
+export enum StorageType {
+  MEMORY = "memory",
+  HDD = "hdd",
+}
 
-const extraSpaceArray = new Array(4);
-const extraSpace = Buffer.from(extraSpaceArray);
+const OK = "+OK\n";
+const ERROR = "+ERR\n";
 
 class HatiSdk {
-  private static options_: { host: string; port: number } = {
+  private options_: { host: string; port: number } = {
     host: "localhost",
     port: 4242,
   };
 
-  private static client_: Socket;
+  private client_: Socket;
 
   constructor(options?: { host: string; port: number }) {
     if (options) {
-      HatiSdk.options_ = options;
+      this.options_ = options;
 
-      HatiSdk.client_ = createConnection({
+      this.client_ = createConnection({
         host: options.host,
         port: options.port,
       });
     }
   }
 
-  static setOptions(options: { host: string; port: number }): void {
-    HatiSdk.options_ = options;
-
-    HatiSdk.client_ = createConnection({
+  setOptions(options: { host: string; port: number }): void {
+    this.options_ = options;
+    this.client_ = createConnection({
       host: options.host,
       port: options.port,
     });
   }
 
-  prepareMessage(payload: string): string {
+  prepareCommand(payload: string): string {
     return `${payload}\n`;
   }
 
-  async publish(message: string): Promise<any> {
+  async publish(command: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      HatiSdk.client_.write(this.prepareMessage(message));
+      this.client_.write(this.prepareCommand(command));
 
-      HatiSdk.client_.on("data", (data) => {
+      this.client_.on("data", (data) => {
         resolve(data.toString());
         if (data.toString().endsWith("EXIT")) {
-          HatiSdk.client_.destroy();
+          this.client_.destroy();
         }
       });
 
-      HatiSdk.client_.on("error", (err) => {
+      this.client_.on("error", (err) => {
         reject(err);
       });
     });
-    // let okCount = 0;
-    // let receivedCount = 0;
+  }
 
-    // const maxCount = 100000;
-    // const startTime: any = new Date();
+  async set(
+    key: string,
+    value: string,
+    storageType: StorageType = StorageType.MEMORY,
+    ttl: number = 0
+  ): Promise<boolean> {
+    const payload = `SET ${storageType} ${ttl} ${key} ${value}`;
 
-    // const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const res = await this.publish(this.prepareCommand(payload));
+    if (res === OK) {
+      return true;
+    }
 
-    // for (let i = 0; i < maxCount; i++) {
-    //   await delay(1 / 600);
+    return false;
+  }
 
-    //   // setImmediate(() => {
-    //   const msg = this.prepareMessage(message);
-    //   // run something
-    //   const ok = client.write(`${msg}`, (err) => {
-    //     if (err) {
-    //       console.error("error: ", err);
-    //     }
-    //   });
+  async get(
+    key: string,
+    storageType: StorageType = StorageType.MEMORY
+  ): Promise<string | null> {
+    const payload = `GET ${storageType} ${key}`;
 
-    //   if (ok) {
-    //     okCount++;
-    //   } else {
-    //     // client.pause();
-    //   }
-    //   // });
-    // }
+    const res = await this.publish(this.prepareCommand(payload));
+    if (res !== ERROR) {
+      return res;
+    }
 
-    // const endTime: any = new Date();
-    // const timeElapsed: any = endTime - startTime;
+    return null;
+  }
 
-    // console.log("timeElapsed: ", timeElapsed);
-    // console.log("okCount: ", okCount);
+  async has(
+    key: string,
+    storageType: StorageType = StorageType.MEMORY
+  ): Promise<boolean> {
+    const payload = `HAS ${storageType} ${key}`;
 
-    // var okBuffer = Buffer.from("+OK\n");
+    const res = await this.publish(this.prepareCommand(payload));
+    if (res === OK) {
+      return true;
+    }
 
-    // client.on("data", function (data) {
-    //   // console.log(data.toString());
+    return false;
+  }
 
-    //   if (Buffer.compare(data, okBuffer) === 0) {
-    //     // console.log("ok");
-    //     return;
-    //   } else {
-    //     // console.log("err: ", data.toString());
-    //   }
+  async delete(
+    key: string,
+    storageType: StorageType = StorageType.MEMORY
+  ): Promise<boolean> {
+    const payload = `DELETE ${storageType} ${key}`;
 
-    //   // var is_kernel_buffer_full = client.write(data);
-    //   // if (!is_kernel_buffer_full) {
-    //   //   client.pause();
-    //   // }
-    //   // if (is_kernel_buffer_full) {
-    //   //   console.log(
-    //   //     "Data was flushed successfully from kernel buffer i.e written successfully!"
-    //   //   );
-    //   // } else {
-    //   //   client.pause();
-    //   // }
-    //   // receivedCount++;
-    //   // client.destroy(); // kill client after server's response
-    //   // console.log("Received: " + data);
-    //   // if (maxCount === receivedCount) {
-    //   //   console.log("YESSSSSSSSS");
-    //   // } else {
-    //   //   console.log(receivedCount);
-    //   // }
-    // });
+    const res = await this.publish(this.prepareCommand(payload));
+    if (res === OK) {
+      return true;
+    }
 
-    // client.on("close", function () {
-    //   console.log("Connection closed");
-    // });
-
-    // client.on("timeout", function () {
-    //   console.log("Socket timed out !");
-    //   client.end("Timed out!");
-    //   // can call socket.destroy() here too.
-    // });
-
-    // client.on("drain", function () {
-    //   console.log(
-    //     "write buffer is empty now .. u can resume the writable stream"
-    //   );
-    //   client.resume();
-    // });
+    return false;
   }
 }
 
