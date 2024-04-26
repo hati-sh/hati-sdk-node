@@ -9,6 +9,7 @@ var StorageType;
 })(StorageType || (exports.StorageType = StorageType = {}));
 const OK = "+OK\n";
 const ERROR = "+ERR\n";
+const KEY_NOT_EXIST = "KEY_NOT_EXIST\n";
 class HatiSdk {
     constructor(options) {
         this.options_ = {
@@ -38,7 +39,7 @@ class HatiSdk {
             this.client_.write(this.prepareCommand(command));
             this.client_.on("data", (data) => {
                 resolve(data.toString());
-                if (data.toString().endsWith("EXIT")) {
+                if (data.toString().endsWith("EXIT\n")) {
                     this.client_.destroy();
                 }
             });
@@ -58,7 +59,7 @@ class HatiSdk {
     async get(key, storageType = StorageType.MEMORY) {
         const payload = `GET ${storageType} ${key}`;
         const res = await this.publish(payload);
-        if (res !== ERROR) {
+        if (res !== ERROR && res !== KEY_NOT_EXIST) {
             return res;
         }
         return null;
